@@ -129,6 +129,8 @@ function AddMention(user_message) {
 function doJob(day, month, year, hour, minute, message) {
     try {
         var job = new CronJob("0 " + minute + " " + hour + " " + day + " " + inputWeekDay + " " + month, function () { //seconds minutes hours day weekday month
+            //check if in list
+
             channel01.send(message);
             // minute + " " + hour + " " + day + " " + month + " *"
         });
