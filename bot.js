@@ -1,6 +1,11 @@
 ﻿require("dotenv").config();
 
 const Discord = require("discord.js");
+const fs = require("fs");
+const logger = fs.createWriteStream('log.txt', {
+    flags: 'a' // 'a' means appending (old data will be preserved)
+})
+
 const client = new Discord.Client();
 var CronJob = require('cron').CronJob;
 var prefix = ".poke";
@@ -32,16 +37,21 @@ client.on("message", message => {
             case "reminder":
                 Refresh(baseMessageid, message);
                 Reminder(user_message);
-
                 break; 
+
             case "refresh":
                 Refresh(baseMessageid, message);
                 channel01.send("Database refreshed! :D");
-
                 break;
+
             case "help":
                 channel01.send("```• .poke remind [dd-mm-yyyy] [hh:mm] [name, name, ...] message: Sets a reminder \n" +
                     "• .poke refresh: Refreshes the database```")
+                break;
+
+            case "txt":
+                WriteScheduleFile();
+                ReadScheduleFile();
                 break;
 
             default: channel01.send("Type '.poke help' for a list of commands");
@@ -172,12 +182,13 @@ function Refresh(message_id, msg) {
     //    channel01.send(baseArray[i]);
     //}
 }
-//var job = new CronJob('* * * * * *', function () {
-//    client.on("message", function (message) {
-//        if (message.content === ".remind") {
-//            const channel01 = client.channels.cache.find(channel => channel.id === "499702957391216652");
-//            channel01.send("Hoi")
-//        }
-//    })
-//});
-//job.start();
+function WriteScheduleFile() {
+    logger.write("poggers \n");
+    logger.write("poggers2 \n");
+    logger.write("poggers3 \n");
+    logger.end();
+}
+function ReadScheduleFile() {
+    var line1 = fs.readFileSync("log.txt").toString();
+    channel01.send(line1);
+}
