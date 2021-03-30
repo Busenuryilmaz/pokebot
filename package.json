@@ -1,0 +1,22 @@
+{
+  "name": "pokebottake2",
+  "version": "1.0.0",
+  "description": "",
+  "repository": "https://github.com/Busenuryilmaz/pokeBot",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "devstart": "nodemon bot.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cron": "^1.8.2",
+    "discord": "^0.8.2",
+    "discord.js": "^12.5.1",
+    "dotenv": "^8.2.0",
+    "node-cron": "^3.0.0",
+    "nodemon": "^2.0.7"
+  }
+}
