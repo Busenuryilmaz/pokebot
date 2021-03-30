@@ -52,6 +52,10 @@ client.on("message", message => {
                 AddEntry(user_message);
                 break;
 
+            case "baseStatus":
+                channel01.send(lines);
+                break;
+
             default: channel01.send("Type '.poke help' for a list of commands");
                 break;
         }
