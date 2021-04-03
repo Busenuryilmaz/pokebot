@@ -2,9 +2,9 @@
 
 const Discord = require("discord.js");
 const fs = require("fs");
-const logger = fs.createWriteStream('database.txt', {
-    flags: 'a' // 'a' means appending (old data will be preserved)
-})
+const mongoose = require("mongoose");
+const MongoClient = require('mongodb').MongoClient;
+const Schema = mongoose.Schema;
 
 const client = new Discord.Client();
 var CronJob = require('cron').CronJob;
@@ -13,10 +13,29 @@ var channel_id = "499702957391216652";
 var channel01;
 var idSender;
 var database = [];
+var uri = "mongodb+srv://Mods:RemindMePlease69@pokecluster.q3420.mongodb.net/PokeDB?retryWrites=true&w=majority"
+
+const nameSchema = new Schema({
+    referenceTag: String,
+    id: Number
+})
+const nameModel = mongoose.model('namesCollection', nameSchema);
 
 client.on('ready', function () {
     console.log("let's a go!")
     channel01 = client.channels.cache.find(channel => channel.id === channel_id);
+    mongoose.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useFindAndModify: true
+    }).then(() => {
+        console.log("we're connected chief! o7");
+        var name = new nameModel({ referenceTag: "buse", id: "318525928558952449" });
+        name.save();
+    }).catch((err) => {
+        console.log(err);
+    });
+
     ReadDatabaseFile();
 });
 
@@ -144,6 +163,7 @@ function doJob(day, month, year, hour, minute, message) {
             //check if in list
 
             channel01.send(message);
+            job.stop();
             // minute + " " + hour + " " + day + " " + month + " *"
         });
         job.start();
@@ -169,9 +189,8 @@ function GetId(name) {
 }
 
 function AddEntry(messageContent) {
-    logger.write(messageContent + "\n")
-    logger.end();
-    ReadDatabaseFile();
+
+
 }
 function ReadDatabaseFile() {
     var lines = fs.readFileSync("database.txt").toString();
