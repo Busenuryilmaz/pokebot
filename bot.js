@@ -1,6 +1,4 @@
-﻿require("dotenv").config();
-
-// bot test channel  499702957391216652
+﻿// bot test channel  499702957391216652
 const Discord = require("discord.js");
 const fs = require("fs");
 const envReader = require('dotenv').config();
@@ -33,7 +31,6 @@ const reminderSchema = new Schema({
 const reminderModel = mongoose.model("reminderCollection", reminderSchema);
 
 client.on('ready', function () {
-    console.log(process.env.RANDOM_STRING);
     console.log("let's a go!")
     channel01 = client.channels.cache.find(channel => channel.id === channel_id);
     mongoose.connect(process.env.BOT_URI, {
