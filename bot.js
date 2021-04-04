@@ -13,6 +13,7 @@ var channel_id = "499702957391216652";
 var channel01;
 var idSender;
 var database = [];
+var weekNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const nameSchema = new Schema({
     referenceTag: String,
@@ -24,6 +25,7 @@ const nameModel = mongoose.model('namesCollection', nameSchema);
 const reminderSchema = new Schema({
     authorId: String,
     reminderTag: String,
+    isWeekly: Boolean,
     dateTime: String,
     message: String
 })
@@ -50,6 +52,10 @@ client.on('ready', function () {
 
 });
 
+client.on("disconnect", function (event) {
+    console.log(`shut down UwU) zzzZZZ...`);
+});
+
 client.on("message", message => {
     idSender = message.author.id;
     if (message.author != ("826098682897891380") && message.content.startsWith(prefix)) {
@@ -68,14 +74,16 @@ client.on("message", message => {
                 Reminder(user_message, idSender);
                 break;
 
-            case "help":
-                channel01.send("```• .poke remind (remindername) [dd-mm-yyyy] [hh:mm] [(name), (name), ...] (message): Sets a reminder \n" +
-                    "• .poke addEntry (reference tag) (id): Adds an entry to the database```")
+            case "weekly":
+                Weekly(user_message, idSender);
                 break;
 
-            case "txt":
-                WriteScheduleFile();
-                GetDatabase();
+            case "help":
+                channel01.send("```• .poke remind (remindername) [dd-mm-yyyy] [hh:mm] [(name), (name), ...] (message): Sets a reminder \n" +
+                    "• .poke weekly (remindername) [&(weekday)] [hh:mm] [(name), (name), ...] (message): Sets a weekly reminder \n" +
+                    "• .poke addEntry (reference tag) (id): Adds an entry to the database \n" +
+                    "• .poke delete (remindername): Deletes a reminder \n" + 
+                    "• .poke list: Lists all entries in reminder database.```");
                 break;
 
             case "addEntry":
@@ -88,6 +96,15 @@ client.on("message", message => {
 
             case "list":
                 List();
+                break;
+
+            case "flush":
+                reminderModel.find().then(function (result) {
+                    for (var i = 0; i < result.length; i++) {
+                        result[i].remove();
+                    }
+                    channel01.send("Deleted " + result.length + " reminders!")
+                })
                 break;
 
             default: channel01.send("Type '.poke help' for a list of commands");
@@ -128,8 +145,8 @@ function Reminder(user_message, _authorId) {
 
     //datum
     var today = new Date();
-    var remindTimeHour = 0;
-    var remindTimeMinutes = 0;
+    var remindTimeHour = "00";
+    var remindTimeMinutes = "00";
     var remindDay = today.getDate();
     var remindMonth = parseInt(today.getMonth()) + 1;
     var remindYear = today.getFullYear();
@@ -162,14 +179,11 @@ function Reminder(user_message, _authorId) {
 
         user_message_array.length--;
     }
-    var inputDate = new Date(remindYear, remindMonth, remindDay, remindTimeHour, remindTimeMinutes, 0, 0);
+    var inputDate = new Date(remindYear, parseInt(remindMonth) - 1, remindDay, parseInt(remindTimeHour), parseInt(remindTimeMinutes), 0, 0);
     if (inputDate < new Date()) { //checks if date passed xoxo
         channel01.send("Oops, this date/time has already passed, chief! o7");
         return;
     }
-
-    inputWeekDay = inputDate.getDay();
-
 
     //generate job
     var messageFinal = stringMessage;
@@ -181,19 +195,95 @@ function Reminder(user_message, _authorId) {
     doJob(remindDay, remindMonth, remindYear, remindTimeHour, remindTimeMinutes, messageFinal, _authorId, reminderTag);
 }
 
-function AddMention(user_message) {
+function Weekly(user_message, _authorId) {
 
+    //remove prefix
+    var commandArray = user_message.split(" ");
+    user_message = "";
+    var reminderTag = commandArray[0];
+    if (reminderTag.includes("[")) {
+        channel01.send("Syntax error! Reminder must include a name. :c");
+        return;
+    }
+    for (var i = 1; i < commandArray.length; i++) {
+        user_message += commandArray[i] + " ";
+    }
+    user_message = user_message.trim();
+
+    //split 1
+    var user_message_array = user_message.split("]");
+    for (var i = 0; i < user_message_array.length; i++) {
+       
+        //gets only the arguments
+        user_message_array[i] = user_message_array[i].replace("[", "");
+        user_message_array[i] = user_message_array[i].trim();
+    }
+
+    //gets notification
+    var stringMessage = user_message_array[user_message_array.length - 1];
+    user_message_array.length = user_message_array.length - 1;
+
+    //datum
+    var today = new Date();
+    var remindTimeHour = "00";
+    var remindTimeMinutes = "00";
+    var remindWeekday = today.getDay();
+    var mentionNames = [];
+    var day = 8;
+
+    while (user_message_array.length > 0) {
+        var last_element = user_message_array[user_message_array.length - 1];
+        if (last_element.includes(":")) {
+
+            // time
+            var lastElementArray = last_element.split(":");
+            remindTimeHour = lastElementArray[0];
+            remindTimeMinutes = lastElementArray[1];
+
+        } else if (last_element.includes("&")) {
+            // day of week
+            last_element = last_element.replace("&", "");
+            for (var i = 0; i < weekNames.length; i ++) {
+                if (last_element.toLowerCase() === weekNames[i].toLowerCase()) {
+                    day = i;
+                    break;
+                }
+            }
+            remindWeekday = day;
+        }
+        else if (!last_element.includes("&")) {
+            //mentions
+            var mentionNames = last_element.split(",")
+            for (var i = 0; i < mentionNames.length; i++) {
+                mentionNames[i] = mentionNames[i].trim();
+            }
+        }
+
+        user_message_array.length--;
+    }
+
+    if (day === 8) {
+        channel01.send("Please enter a valid weekday, eg. 'Tuesday'.");
+        return;
+    }
+
+    //generate job
+    var messageFinal = stringMessage;
+    for (var i = mentionNames.length - 1; i >= 0; i--) {
+        mentionId = GetId(mentionNames[i]);
+        messageFinal = mentionId + " " + messageFinal;
+    }
+    messageFinal = "<@" + idSender + "> " + messageFinal;
+    WeeklyJob(remindWeekday, remindTimeHour, remindTimeMinutes, messageFinal, _authorId, reminderTag);
 }
-//seconds, 
+
 function doJob(day, month, year, hour, minute, message, authorId, reminderTag) {
     try {
         //addsReminder
-
-        //checks if tag already exists in db
         var monthToInt = parseInt(month) - 1;
         var dateTimeString = "0 " + minute + " " + hour + " " + day + " " + monthToInt + " " + "*";
 
-
+        //checks if tag already exists in db
         reminderModel.find().then(function (result) {
             for (var i = 0; i < result.length; i++) {
                 if (result[i].reminderTag === reminderTag) {
@@ -202,25 +292,85 @@ function doJob(day, month, year, hour, minute, message, authorId, reminderTag) {
                 }
             }
             //adds to database
-            var reminder = new reminderModel({ authorId: authorId, reminderTag: reminderTag, dateTime: dateTimeString + " " + year, message: message });
-            reminder.save().then(function () {
-                if (reminder.isNew)
-                    channel01.send("Failed to add reminder to the schedule");
-                else {
-                    var reminderId = reminder._id.toString();
-                    var job = new CronJob(dateTimeString, function () { //seconds minutes hours day weekday month
-                        //check if in list
-                        reminderModel.findOne({ _id: reminderId }).then(function (result) {
-                            if (result != null) {
-                                channel01.send(message);
-                                Delete(reminderTag, false);
-                            }
-                        });
-                        job.stop();
+            var reminder = new reminderModel({ authorId: authorId, reminderTag: reminderTag, isWeekly: false, dateTime: dateTimeString + " " + year, message: message });
 
+            var reminderId = reminder._id.toString();
+            try {
+                var job = new CronJob(dateTimeString, function () { //seconds minutes hours day weekday month
+                    //check if in list
+                    reminderModel.findOne({ _id: reminderId }).then(function (result) {
+                        if (result != null) {
+                            channel01.send(message);
+                            Delete(reminderTag, false);
+                        }
                     });
-                    job.start();
+                    job.stop();
+                });
+                job.start();
+            }
+            catch {
+                channel01.send("Error: Please enter a valid time and/or date. Ff normaal doen schatteke x.")
+                return;
+            }
+
+            reminder.save().then(function () {
+                if (reminder.isNew) {
+                    channel01.send("Error: MongoDB failed. Ask Buse or **Jesse the Great**");
+                    job.stop();
+                }
+                else {
                     channel01.send("Copy that! Reminder set for " + hour + ":" + minute + " on " + day + "-" + month + "-" + year + ".");
+                }
+            });
+
+        });
+
+    }
+    catch (err){
+        channel01.send("👉👈  Oops user-san, I think maybe hypothetically you are dumb.")
+        console.log(err);
+    }
+}
+
+function WeeklyJob(weekDay, hour, minute, message, authorId, reminderTag) {
+    try {
+        var dateTimeString = "0 " + minute + " " + hour + " * * " + weekDay;
+
+        //checks if tag already exists in db
+        reminderModel.find().then(function (result) {
+            for (var i = 0; i < result.length; i++) {
+                if (result[i].reminderTag === reminderTag) {
+                    channel01.send("This reminder tag already exists! Please use another one.")
+                    return;
+                }
+            }
+            //adds to database
+            var reminder = new reminderModel({ authorId: authorId, reminderTag: reminderTag, isWeekly: true, dateTime: dateTimeString + " *", message: message });
+
+            var reminderId = reminder._id.toString();
+            try {
+                var job = new CronJob(dateTimeString, function () { //seconds minutes hours day weekday month
+                    //check if in list
+                    reminderModel.findOne({ _id: reminderId }).then(function (result) {
+                        if (result != null) {
+                            channel01.send(message);
+                        }
+                    });
+                });
+                job.start();
+            }
+            catch {
+                channel01.send("Error: Please enter a valid time and/or date. Ff normaal doen schatteke x.")
+                return;
+            }
+
+            reminder.save().then(function () {
+                if (reminder.isNew) {
+                    channel01.send("Error: MongoDB failed. Ask Buse or **Jesse the Great**");
+                    job.stop();
+                }
+                else {
+                    channel01.send("Copy that! Reminder set for " + hour + ":" + minute + " on " + weekNames[weekDay]);
                 }
             });
         });
@@ -232,7 +382,7 @@ function doJob(day, month, year, hour, minute, message, authorId, reminderTag) {
     }
 }
 
-function ReactivateJob(dateTimeString, message, reminderTag, reminderId) {
+function ReactivateJob(dateTimeString, message, reminderTag, reminderId, _isWeekly) {
 
     //remove year
     var dateTimeArray = dateTimeString.split(" ");
@@ -247,10 +397,12 @@ function ReactivateJob(dateTimeString, message, reminderTag, reminderId) {
             reminderModel.findOne({ _id: reminderId }).then(function (result) {
                 if (result != null) {
                     channel01.send(message);
-                    Delete(reminderTag, false);
+                    if (!_isWeekly)
+                        Delete(reminderTag, false);
                 }
             });
-            job.stop();
+            if (!_isWeekly)
+                job.stop();
         });
         job.start();
 
@@ -258,7 +410,6 @@ function ReactivateJob(dateTimeString, message, reminderTag, reminderId) {
     catch(err){
         console.log(err);
     }
-
 }
 
 function GetId(name) {
@@ -271,25 +422,6 @@ function GetId(name) {
         }
     }
     return "@" + name;
-}
-
-function AddReminder(_authorId, _reminderTag, _dateTime, _message) {
-
-    //checks if tag already exists in db
-    reminderModel.find().then(function (result) {
-        for (var i = 0; i < result.length; i++) {
-            if (result[i].reminderTag === _reminderTag) {
-                channel01.send("This reminder tag already exists! Please use another one.")
-                return;
-            }
-        }
-        //adds to database
-        var reminder = new reminderModel({ authorId: _authorId, reminderTag: _reminderTag, dateTime: _dateTime, message: _message });
-        reminder.save().then(function () {
-            if (reminder.isNew)
-                channel01.send("Failed to add reminder to the schedule");
-        });
-    });
 }
 
 function Delete(tag, printMessage, _authorId = "") {
@@ -329,7 +461,7 @@ function OnStartup() {
             // "0 " + minute + " " + hour + " " + day + " " + monthToInt + " " + "*" + " " + year
 
             var cronDate = new Date(cronArray[6], cronArray[4], cronArray[3], cronArray[2], cronArray[1], 0, 0);
-            if (cronDate < bootDate) {
+            if (cronDate < bootDate && !result[i].isWeekly) { // Checks if the date has passed and it's not a weekly cronjob
                 missedArray.length++
                 missedArray[missedArray.length - 1] = result[i];
             }
@@ -345,11 +477,11 @@ function OnStartup() {
         //reactivate cronjobs
         reminderModel.find().then(function (result) {
             for (var i = 0; i < result.length; i++) {
-                ReactivateJob(result[i].dateTime, result[i].message, result[i].reminderTag, result[i]._id.toString());
+                ReactivateJob(result[i].dateTime, result[i].message, result[i].reminderTag, result[i]._id.toString(), result[i].isWeekly);
             }
         })
     })
-}
+} //*
 
 function AddEntry(messageContent) {
     var messageContentArray = messageContent.split(" ");
@@ -380,7 +512,6 @@ function AddEntry(messageContent) {
                 channel01.send("Failed to add " + messageContentArray[0] + " to the database!")
         });
     });
-
 }
 
 function GetDatabase() {
@@ -389,7 +520,6 @@ function GetDatabase() {
             database.length++;
             database[database.length - 1] = [result[i].referenceTag, result[i].id];
         }
-
     });   
 }
 
@@ -405,8 +535,21 @@ function List() {
             flags: 'w' // 'a' means appending (old data will be preserved)
         })
 
+        // split the array in two based on weekly's
+        var resultReminder = [];
+        var resultWeekly = [];
+        for (var i = 0; i < result.length; i ++) {
+            if (result[i].isWeekly) {
+                resultWeekly.length ++;
+                resultWeekly[resultWeekly.length - 1] = result[i];
+            } else {
+                resultReminder.length ++;
+                resultReminder[resultReminder.length - 1] = result[i];
+            }
+        }
+
         //sorts by date
-        result.sort(function (a, b) {
+        resultReminder.sort(function (a, b) {
             var arrayA = a.dateTime.split(" ");
             var dateA = new Date(arrayA[6], arrayA[4], arrayA[3], arrayA[2], arrayA[1]);
             var arrayB = b.dateTime.split(" ");
@@ -414,15 +557,33 @@ function List() {
 
             return dateA - dateB;
         })
+
+        // sorts by day
+        resultWeekly.sort(function (a, b) {
+            var arrayA = a.dateTime.split(" ");
+            var arrayB = b.dateTime.split(" ");
+
+            return arrayA[5] - arrayB[5];
+        })
+
         //print
         var listMessage = "";
-        for (var i = 0; i < result.length; i++) {
-            var dateTimeArray = result[i].dateTime.split(" ");
-            dateTimeArray[4] = parseInt(dateTimeArray[4]) + 1;
-            listMessage += "• " + result[i].reminderTag + " (" + dateTimeArray[3] + "-" + dateTimeArray[4] + "-" + dateTimeArray[6] + ", " + dateTimeArray[2] + ":" + dateTimeArray[1] + ") \n";
+        if (resultReminder.length > 0) {
+            for (var i = 0; i < resultReminder.length; i++) {
+                var dateTimeArray = resultReminder[i].dateTime.split(" ");
+                dateTimeArray[4] = parseInt(dateTimeArray[4]) + 1;
+                listMessage += "• " + resultReminder[i].reminderTag + " (" + dateTimeArray[3] + "-" + dateTimeArray[4] + "-" + dateTimeArray[6] + ", " + dateTimeArray[2] + ":" + dateTimeArray[1] + ") \n";
+            }
+            listMessage += "\n"
         }
+        if (resultWeekly.length > 0) {
+            for (var i = 0; i < resultWeekly.length; i++) {
+                var dateTimeArray = resultWeekly[i].dateTime.split(" ");
+                listMessage += "• " + resultWeekly[i].reminderTag + " (" + weekNames[dateTimeArray[5]] + ", " + dateTimeArray[2] + ":" + dateTimeArray[1] + ") \n";
+            }
+        }
+        listMessage = listMessage.trim();
         if (listMessage.length > 1950) {
-
                 logger.write(listMessage);
 
                 channel01.send("Too many reminders for a discord message, please refer to this file:", {
@@ -433,8 +594,5 @@ function List() {
         }
 
         else channel01.send("```" + listMessage + "```");
-        
-
-
     })
 }
