@@ -104,7 +104,7 @@ client.on("message", message => {
                     "• " + prefix + " weekly (remindername) [&(weekday)] [hh:mm] [(name), (name), ...] (message): Sets a weekly reminder \n" +
                     "• " + prefix + " delete (remindername): Deletes a reminder \n" +
                     "• " + prefix + " list reminders: Lists all currently active reminders \n" +
-                    "• " + prefix + " list reminders tag: Lists all reminders containing your tag \n" +
+                    "• " + prefix + " list reminders tag: Lists all reminders mentioning you \n" +
                     "• " + prefix + " list entries: Lists all references in the database \n" +
                     "• " + prefix + " addEntry (reference tag) (id): Adds a reference entry to the database \n" +
                     "• " + prefix + " dropEntry (reference tag): Removes a reference entry from the database \n" +
