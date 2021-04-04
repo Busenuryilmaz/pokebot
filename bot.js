@@ -14,7 +14,7 @@ var channel_id = "499702957391216652";
 var channel01;
 var idSender;
 var database = [];
-var uri = process.env.BOT_URI.toString();
+var uri = process.env.BOT_URI;
 
 const nameSchema = new Schema({
     referenceTag: String,
