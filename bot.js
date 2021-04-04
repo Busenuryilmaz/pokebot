@@ -61,13 +61,6 @@ client.on('ready', function () {
         console.log("we're connected chief! o7");
 
         OnStartup();
-
-        //setup misc cronjobs
-        var _today = new Date(new Date().getTime() + 1200);
-        var jobPing = new CronJob(_today.getSeconds() + " * * * * *", function () {
-            PingDate();
-        });
-        jobPing.start();
     }).catch((err) => {
         console.log("F")
         console.log(err);
@@ -530,6 +523,13 @@ function OnStartup() {
                     ReactivateJob(resultArray[i].dateTime, resultArray[i].message, resultArray[i].reminderTag, resultArray[i]._id.toString(), resultArray[i].isWeekly);
                 }
             })
+
+            //setup misc cronjobs
+            var _today = new Date(new Date().getTime() + 1200);
+            var jobPing = new CronJob(_today.getSeconds() + " * * * * *", function () {
+                PingDate();
+            });
+            jobPing.start();
 
             // Debugging
             channel01.send("Ready! o7");
