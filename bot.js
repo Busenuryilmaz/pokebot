@@ -1,4 +1,5 @@
-﻿// bot test channel  499702957391216652
+﻿//variabeles
+// bot test channel  499702957391216652
 const Discord = require("discord.js");
 const fs = require("fs");
 const envReader = require('dotenv').config();
@@ -15,6 +16,7 @@ var idSender;
 var database = [];
 var weekNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
+// Mongoose collections
 const nameSchema = new Schema({
     referenceTag: String,
     id: String
@@ -32,6 +34,17 @@ const reminderSchema = new Schema({
 
 const reminderModel = mongoose.model("reminderCollection", reminderSchema);
 
+const dateSchema = new Schema({
+    year: String,
+    month: String,
+    date: String,
+    hour: String,
+    minute: String,
+    second: String
+})
+
+const dateModel = mongoose.model("dateCollection", dateSchema);
+
 client.on('ready', function () {
     console.log("let's a go!")
     channel01 = client.channels.cache.find(channel => channel.id === channel_id);
@@ -42,18 +55,23 @@ client.on('ready', function () {
     }).then(() => {
         GetDatabase();
         console.log("we're connected chief! o7");
+
         OnStartup();
+
+        //setup misc cronjobs
+        var _today = new Date(new Date().getTime() + 1200);
+        var jobPing = new CronJob(_today.getSeconds() + " * * * * *", function() {
+            var _day = new Date();
+            var currentDate = new dateModel({
+                year: _day.getFullYear, month: _day.getMonth, date: _day.getDate, hour: _day.getHours, minute: _day.getMinutes, second: _day.getSeconds
+            });
+            currentDate.save();
+            console.log(_day.toDateString());
+        });
     }).catch((err) => {
         console.log("F")
         console.log(err);
     });
-
-    //setup misc cronjobs
-
-});
-
-client.on("disconnect", function (event) {
-    console.log(`shut down UwU) zzzZZZ...`);
 });
 
 client.on("message", message => {
