@@ -14,7 +14,6 @@ var channel_id = "499702957391216652";
 var channel01;
 var idSender;
 var database = [];
-var uri = process.env.BOT_URI;
 
 const nameSchema = new Schema({
     referenceTag: String,
@@ -35,7 +34,7 @@ const reminderModel = mongoose.model("reminderCollection", reminderSchema);
 client.on('ready', function () {
     console.log("let's a go!")
     channel01 = client.channels.cache.find(channel => channel.id === channel_id);
-    mongoose.connect(uri, {
+    mongoose.connect(process.env.BOT_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useFindAndModify: false
