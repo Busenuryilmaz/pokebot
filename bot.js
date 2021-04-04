@@ -33,17 +33,18 @@ const reminderModel = mongoose.model("reminderCollection", reminderSchema);
 client.on('ready', function () {
     console.log("let's a go!")
     channel01 = client.channels.cache.find(channel => channel.id === channel_id);
-    mongoose.connect(process.env.BOT_URI.toString(), {
+    mongoose.connect(process.env.BOT_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useFindAndModify: false
     }).then(() => {
         GetDatabase();
         console.log("we're connected chief! o7");
+        OnStartup();
     }).catch((err) => {
         console.log(err);
     });
-    OnStartup()
+
     //setup misc cronjobs
 
 });
