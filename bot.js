@@ -33,7 +33,7 @@ const reminderModel = mongoose.model("reminderCollection", reminderSchema);
 client.on('ready', function () {
     console.log("let's a go!")
     channel01 = client.channels.cache.find(channel => channel.id === channel_id);
-    mongoose.connect(process.env.BOT_URI, {
+    mongoose.connect(process.env.BOT_URI.toString(), {
         useNewUrlParser: true,
         useUnifiedTopology: true,
         useFindAndModify: false
