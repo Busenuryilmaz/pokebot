@@ -42,6 +42,7 @@ client.on('ready', function () {
         console.log("we're connected chief! o7");
         OnStartup();
     }).catch((err) => {
+        console.log("F")
         console.log(err);
     });
 
